@@ -7,18 +7,18 @@ import type { Feature, FeatureCollection, Geometry } from 'geojson';
 import type { Topology } from 'topojson-specification';
 import statesTopo from 'us-atlas/states-10m.json';
 
-export const MAP_WIDTH = 975;
-export const MAP_HEIGHT = 610;
-
-/** Transit-day fill colors (within selected threshold). */
+/** Amber sequential ramp: 1-day (closest) = most saturated. */
 export const DAY_COLORS: Record<number, string> = {
-  1: '#15803d',
-  2: '#65a30d',
-  3: '#ca8a04',
+  1: '#F59E0B',
+  2: '#FBBF24',
+  3: '#FDE68A',
 };
 
-const OUT_OF_RANGE_COLOR = '#cbd5e1';
-const ORIGIN_COLOR = '#1a56db';
+const OUT_OF_RANGE_COLOR = '#E3E0DB';
+const ORIGIN_COLOR = '#F59E0B';
+
+export const MAP_WIDTH = 975;
+export const MAP_HEIGHT = 720;
 
 const topology = statesTopo as unknown as Topology;
 export const statesCollection = feature(

@@ -1,14 +1,13 @@
-# Where to build
+# Footprint
 
-Evaluate distribution node locations against US demand geography.
+Find where to place your next distribution center. Map what your current fulfillment network reaches today, then get data-backed recommendations for where to expand.
 
 **Live app:** [network-siting-explorer.vercel.app](https://network-siting-explorer.vercel.app)
 
 ## What it does
 
-- **Coverage Analysis** — single-origin reach by 1/2/3-day ground transit
-- **State Density** — US choropleth of population density
-- **Current network reach** — multi-warehouse demand and population served
+- **Reach & Expand** — add warehouse ZIP-3s, view coverage by 1/2/3-day ship speed, and ranked siting alternatives
+- **Population Density** — US choropleth of population density by state
 - **ZIP-3 Lookup** — demographics and demand index per ZIP-3
 - **Methodology** — FAQ on data sources and calculations
 

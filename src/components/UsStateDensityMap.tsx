@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import type { Zip3Zone } from '../data';
 import { formatNumber } from '../format';
 import { TAB_PURPOSE } from '../tabPurpose';
@@ -19,33 +19,109 @@ interface UsStateDensityMapProps {
   zones: Zip3Zone[];
 }
 
+interface MapViewBox {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+const FULL_VIEW: MapViewBox = {
+  x: 0,
+  y: 0,
+  w: MAP_WIDTH,
+  h: MAP_HEIGHT,
+};
+
+const ZOOM_FACTOR = 0.55;
+const MIN_VIEW_RATIO = 0.18;
+
+function isFullView(viewBox: MapViewBox): boolean {
+  return (
+    viewBox.x === FULL_VIEW.x &&
+    viewBox.y === FULL_VIEW.y &&
+    viewBox.w === FULL_VIEW.w &&
+    viewBox.h === FULL_VIEW.h
+  );
+}
+
+function zoomViewBoxAt(
+  viewBox: MapViewBox,
+  relX: number,
+  relY: number,
+): MapViewBox | null {
+  const svgX = viewBox.x + relX * viewBox.w;
+  const svgY = viewBox.y + relY * viewBox.h;
+  const newW = viewBox.w * ZOOM_FACTOR;
+  const newH = viewBox.h * ZOOM_FACTOR;
+
+  if (newW < MAP_WIDTH * MIN_VIEW_RATIO) {
+    return null;
+  }
+
+  const newX = Math.max(0, Math.min(MAP_WIDTH - newW, svgX - newW * relX));
+  const newY = Math.max(0, Math.min(MAP_HEIGHT - newH, svgY - newH * relY));
+
+  return { x: newX, y: newY, w: newW, h: newH };
+}
+
 export function UsStateDensityMap({ zones }: UsStateDensityMapProps) {
   const [hovered, setHovered] = useState<StateDensity | null>(null);
+  const [viewBox, setViewBox] = useState<MapViewBox>(FULL_VIEW);
 
   const states = useMemo(() => computeStateDensities(zones), [zones]);
   const tierRanges = useMemo(() => densityTierRanges(states), [states]);
+  const zoomed = !isFullView(viewBox);
 
   const hoveredCentroid = useMemo(() => {
     if (!hovered?.labelX || hovered.labelY === null) return null;
     return { x: hovered.labelX, y: hovered.labelY };
   }, [hovered]);
 
+  const handleMapClick = useCallback(
+    (e: React.MouseEvent<SVGSVGElement>) => {
+      const svg = e.currentTarget;
+      const rect = svg.getBoundingClientRect();
+      const relX = (e.clientX - rect.left) / rect.width;
+      const relY = (e.clientY - rect.top) / rect.height;
+      const next = zoomViewBoxAt(viewBox, relX, relY);
+      if (next) {
+        setViewBox(next);
+      }
+    },
+    [viewBox],
+  );
+
+  const resetView = useCallback(() => {
+    setViewBox(FULL_VIEW);
+  }, []);
+
   return (
     <section className="mode-panel density-panel">
       <TabPurpose>{TAB_PURPOSE.density}</TabPurpose>
 
       <div className="coverage-map density-map">
-        <div className="coverage-map__header">
+        <div className="coverage-map__header density-map__header">
           <h3>Population density by state</h3>
-          <p>Three-tier choropleth: darker blue = higher density</p>
         </div>
 
-        <div className="coverage-map__frame">
+        <div className="coverage-map__frame density-map__frame">
+          {zoomed && (
+            <button
+              type="button"
+              className="density-map__reset"
+              onClick={resetView}
+            >
+              Reset view
+            </button>
+          )}
+
           <svg
-            viewBox={`0 0 ${MAP_WIDTH} ${MAP_HEIGHT}`}
-            className="coverage-map__svg"
+            viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.w} ${viewBox.h}`}
+            className="coverage-map__svg density-map__svg"
             role="img"
-            aria-label="US state map colored by population density in three tiers"
+            aria-label="US state map colored by population density"
+            onClick={handleMapClick}
           >
             <rect
               width={MAP_WIDTH}
@@ -95,8 +171,8 @@ export function UsStateDensityMap({ zones }: UsStateDensityMapProps) {
             <div
               className="coverage-map__tooltip"
               style={{
-                left: `${(hoveredCentroid.x / MAP_WIDTH) * 100}%`,
-                top: `${(hoveredCentroid.y / MAP_HEIGHT) * 100}%`,
+                left: `${((hoveredCentroid.x - viewBox.x) / viewBox.w) * 100}%`,
+                top: `${((hoveredCentroid.y - viewBox.y) / viewBox.h) * 100}%`,
               }}
             >
               <strong>{hovered.name}</strong>

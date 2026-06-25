@@ -12,7 +12,7 @@ export function MethodologyFaq() {
         <h2 className="methodology-faq__title">Methodology FAQ</h2>
         <p className="methodology-faq__subtitle">
           How data is sourced, how distances and coverage are modeled, and how
-          to interpret results in Network Siting Explorer.
+          to interpret results in Footprint.
         </p>
       </div>
 

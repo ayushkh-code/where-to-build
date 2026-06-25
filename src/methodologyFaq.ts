@@ -39,7 +39,7 @@ export const METHODOLOGY_FAQ: MethodologyFaqItem[] = [
   {
     question: 'How should I interpret demand index totals and percentages?',
     paragraphs: [
-      'Values are comparable across zones and can be summed for reachable coverage totals. In Current network reach, demand served % is the sum of demand index for served zones divided by total US demand index in the dataset.',
+      'Values are comparable across zones and can be summed for reachable coverage totals. On Reach & Expand, demand served % is the sum of demand index for served zones divided by total US demand index in the dataset.',
       'Demand index is not normalized to forecast order counts and should not be read as predicted shipments. Rows with missing ACS demographics have no demand index.',
     ],
   },
@@ -56,17 +56,11 @@ export const METHODOLOGY_FAQ: MethodologyFaqItem[] = [
     ],
   },
   {
-    question: 'How does Coverage Analysis work?',
+    question: 'How does Reach & Expand work?',
     paragraphs: [
-      'Given an origin ZIP-3, the app measures great-circle distance from the origin centroid to every other zone, converts to road miles and transit days, then aggregates population and demand index for all zones within the selected day threshold (1, 2, or 3 days).',
-      'Population coverage % uses the sum of all population in the dataset as the US total (100%). The coverage map plots each zone centroid on a US Albers projection; dot size reflects population and color reflects transit-day bucket.',
-    ],
-  },
-  {
-    question: 'How does Current network reach work?',
-    paragraphs: [
-      'For multiple warehouse ZIP-3 codes, each demand zone is assigned to the nearest distribution center by transit days (shortest path across the network). A zone counts as served if any warehouse can reach it within the selected service standard (1, 2, or 3 days).',
-      'Demand served % is the sum of demand index for served zones divided by total US demand index in the dataset; population % uses the same union logic across warehouses.',
+      'Add one or more warehouse ZIP-3 codes. Each demand zone is assigned to the nearest warehouse by transit days (shortest path across the network). A zone counts as served if any warehouse can reach it within the selected service standard (1, 2, or 3 days).',
+      'Demand served % is the sum of demand index for served zones divided by total US demand index; population % uses the same union logic. The expansion planner recommends up to three additional nodes using greedy siting to maximize incremental demand, population, or zone count.',
+      'The coverage map plots each zone centroid on a US Albers projection; dot size reflects population and color reflects an amber transit-day ramp. Navy markers with amber rings show recommended next sites.',
     ],
   },
   {

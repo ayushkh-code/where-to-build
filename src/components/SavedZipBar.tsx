@@ -1,5 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toZip3, type Zip3Zone } from '../data';
+import { useTypingPlaceholder } from '../useTypingPlaceholder';
+import { parseZipInputSegments } from '../zipInput';
 import { ZIP3_HELP } from '../labels';
 
 interface SavedZipBarProps {
@@ -16,6 +18,10 @@ interface SavedZipBarProps {
   showChips?: boolean;
   label?: string;
   emptyHint?: string | null;
+  /** Short note shown under the input (e.g. comma-separated entry). */
+  inputNote?: string | null;
+  /** Example typed in the input when empty (grey text, amber border on field). */
+  examplePlaceholder?: string | null;
 }
 
 export function SavedZipChips({
@@ -67,14 +73,42 @@ export function SavedZipBar({
   showChips = true,
   label,
   emptyHint = 'Add a location here. It stays saved as you switch tabs.',
+  inputNote = null,
+  examplePlaceholder = null,
 }: SavedZipBarProps) {
   const [input, setInput] = useState('');
+  const [reduceMotion, setReduceMotion] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const update = () => setReduceMotion(mq.matches);
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
+
+  const showPrompt = Boolean(examplePlaceholder) && !input;
+  const showTyping = showPrompt && !reduceMotion;
+  const typedExample = useTypingPlaceholder(
+    examplePlaceholder ?? '',
+    showTyping,
+  );
+  const promptText = reduceMotion ? (examplePlaceholder ?? '') : typedExample;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onClearError();
-    const zip3 = toZip3(input);
-    if (onAdd(zip3)) {
+    const segments = parseZipInputSegments(input);
+    if (segments.length === 0) return;
+
+    let addedAny = false;
+    for (const segment of segments) {
+      if (onAdd(toZip3(segment))) {
+        addedAny = true;
+      }
+    }
+
+    if (addedAny) {
       setInput('');
     }
   };
@@ -91,18 +125,46 @@ export function SavedZipBar({
       <form className="saved-zip-bar__form" onSubmit={handleSubmit}>
         <label htmlFor={inputId}>{resolvedLabel}</label>
         <div className="search-row">
-          <input
-            id={inputId}
-            type="text"
-            inputMode="numeric"
-            placeholder="e.g. 100 or 10001"
-            maxLength={5}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            autoComplete="off"
-          />
-          <button type="submit">Add</button>
+          <div
+            className={
+              showPrompt
+                ? 'search-row__input-wrap search-row__input-wrap--prompt'
+                : 'search-row__input-wrap'
+            }
+          >
+            <input
+              id={inputId}
+              type="text"
+              inputMode="text"
+              placeholder={examplePlaceholder ? '' : 'e.g. 100,900,606'}
+              maxLength={80}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              autoComplete="off"
+              aria-describedby={
+                showPrompt ? `${inputId}-typing-hint` : undefined
+              }
+            />
+            {showPrompt && (
+              <span
+                id={`${inputId}-typing-hint`}
+                className="search-row__typing mono"
+                aria-hidden="true"
+              >
+                {promptText}
+                {showTyping && (
+                  <span className="search-row__typing-caret" />
+                )}
+              </span>
+            )}
+          </div>
+          <button type="submit" className="btn-primary">
+            Add
+          </button>
         </div>
+        {inputNote && (
+          <p className="saved-zip-bar__note">{inputNote}</p>
+        )}
       </form>
 
       {addError && <p className="message message--warn">{addError}</p>}

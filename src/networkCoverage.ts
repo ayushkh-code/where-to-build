@@ -109,6 +109,222 @@ export function computeNetworkDaySummaries(
   });
 }
 
+export type MaximizeObjective = 'demand_index' | 'population' | 'zones';
+
+/** Ranked backup alternatives shown in the expansion planner. */
+export const RECOMMENDATION_ALTERNATIVE_COUNT = 5;
+
+export interface NodeRecommendation {
+  rank: number;
+  zone: Zip3Zone;
+  /** Additional objective units captured by this node (given prior picks). */
+  incrementalGain: number;
+  demandIndexPct: number;
+  populationPct: number;
+  zonesServed: number;
+}
+
+function incrementalObjectiveGain(
+  coverage: ServedZone[],
+  candidate: Zip3Zone,
+  dayThreshold: number,
+  objective: MaximizeObjective,
+): number {
+  let gain = 0;
+  for (const row of coverage) {
+    const { days } = distanceMetrics(
+      candidate.centroid_lat,
+      candidate.centroid_lng,
+      row.zone.centroid_lat,
+      row.zone.centroid_lng,
+    );
+    const wasServed = row.min_transit_days <= dayThreshold;
+    const nowServed = Math.min(row.min_transit_days, days) <= dayThreshold;
+    if (!wasServed && nowServed) {
+      if (objective === 'demand_index') {
+        gain += row.zone.demand_index ?? 0;
+      } else if (objective === 'population') {
+        gain += row.zone.population ?? 0;
+      } else {
+        gain += 1;
+      }
+    }
+  }
+  return gain;
+}
+
+function mergeWarehouseIntoCoverage(
+  coverage: ServedZone[],
+  warehouse: Zip3Zone,
+): ServedZone[] {
+  return coverage.map((row) => {
+    const { roadMi, days, zone: parcelZone } = distanceMetrics(
+      warehouse.centroid_lat,
+      warehouse.centroid_lng,
+      row.zone.centroid_lat,
+      row.zone.centroid_lng,
+    );
+    if (days < row.min_transit_days) {
+      return {
+        ...row,
+        min_transit_days: days,
+        road_miles: roadMi,
+        parcel_zone: parcelZone,
+        nearest_warehouse_zip3: warehouse.zip3,
+      };
+    }
+    return row;
+  });
+}
+
+function summaryAtThreshold(
+  coverage: ServedZone[],
+  dayThreshold: number,
+  usTotalPopulation: number,
+  usTotalDemandIndex: number,
+): Pick<NodeRecommendation, 'demandIndexPct' | 'populationPct' | 'zonesServed'> {
+  const served = coverage.filter((z) => z.min_transit_days <= dayThreshold);
+  const totalPopulation = served.reduce(
+    (sum, z) => sum + (z.zone.population ?? 0),
+    0,
+  );
+  const totalDemandIndex = served.reduce(
+    (sum, z) => sum + (z.zone.demand_index ?? 0),
+    0,
+  );
+  return {
+    zonesServed: served.length,
+    populationPct:
+      usTotalPopulation > 0 ? (totalPopulation / usTotalPopulation) * 100 : 0,
+    demandIndexPct:
+      usTotalDemandIndex > 0
+        ? (totalDemandIndex / usTotalDemandIndex) * 100
+        : 0,
+  };
+}
+
+function buildExcludedZip3Set(
+  existingWarehouses: Zip3Zone[],
+  excludedZip3s: Iterable<string> = [],
+): Set<string> {
+  const excluded = new Set(existingWarehouses.map((w) => w.zip3));
+  for (const zip3 of excludedZip3s) {
+    excluded.add(zip3);
+  }
+  return excluded;
+}
+
+/**
+ * Top N site alternatives ranked by incremental gain from the current network.
+ * Each option is evaluated independently (pick one), not as a build-all sequence.
+ */
+export function recommendNextSiteAlternatives(
+  existingWarehouses: Zip3Zone[],
+  allZones: Zip3Zone[],
+  alternativeCount: number,
+  dayThreshold: number,
+  objective: MaximizeObjective,
+  usTotalPopulation: number,
+  usTotalDemandIndex: number,
+  excludedZip3s: Iterable<string> = [],
+): NodeRecommendation[] {
+  if (existingWarehouses.length === 0 || alternativeCount < 1) return [];
+
+  const excluded = buildExcludedZip3Set(existingWarehouses, excludedZip3s);
+  const coverage = computeNetworkCoverage(existingWarehouses, allZones);
+
+  const ranked = allZones
+    .filter((zone) => !excluded.has(zone.zip3))
+    .map((zone) => ({
+      zone,
+      gain: incrementalObjectiveGain(
+        coverage,
+        zone,
+        dayThreshold,
+        objective,
+      ),
+    }))
+    .filter((row) => row.gain > 0)
+    .sort((a, b) => b.gain - a.gain)
+    .slice(0, alternativeCount);
+
+  return ranked.map((row, index) => {
+    const projectedCoverage = mergeWarehouseIntoCoverage(coverage, row.zone);
+    const projected = summaryAtThreshold(
+      projectedCoverage,
+      dayThreshold,
+      usTotalPopulation,
+      usTotalDemandIndex,
+    );
+    return {
+      rank: index + 1,
+      zone: row.zone,
+      incrementalGain: row.gain,
+      ...projected,
+    };
+  });
+}
+
+/**
+ * Greedy siting: pick up to `nodeCount` ZIP-3 candidates that maximize the
+ * chosen objective within `dayThreshold`, given existing warehouses.
+ */
+export function recommendAdditionalNodes(
+  existingWarehouses: Zip3Zone[],
+  allZones: Zip3Zone[],
+  nodeCount: number,
+  dayThreshold: number,
+  objective: MaximizeObjective,
+  usTotalPopulation: number,
+  usTotalDemandIndex: number,
+  excludedZip3s: Iterable<string> = [],
+): NodeRecommendation[] {
+  if (existingWarehouses.length === 0 || nodeCount < 1) return [];
+
+  const usedZip3s = buildExcludedZip3Set(existingWarehouses, excludedZip3s);
+  let coverage = computeNetworkCoverage(existingWarehouses, allZones);
+  const recommendations: NodeRecommendation[] = [];
+
+  for (let rank = 1; rank <= nodeCount; rank++) {
+    let bestZone: Zip3Zone | null = null;
+    let bestGain = -1;
+
+    for (const candidate of allZones) {
+      if (usedZip3s.has(candidate.zip3)) continue;
+      const gain = incrementalObjectiveGain(
+        coverage,
+        candidate,
+        dayThreshold,
+        objective,
+      );
+      if (gain > bestGain) {
+        bestGain = gain;
+        bestZone = candidate;
+      }
+    }
+
+    if (!bestZone || bestGain <= 0) break;
+
+    usedZip3s.add(bestZone.zip3);
+    coverage = mergeWarehouseIntoCoverage(coverage, bestZone);
+    const projected = summaryAtThreshold(
+      coverage,
+      dayThreshold,
+      usTotalPopulation,
+      usTotalDemandIndex,
+    );
+
+    recommendations.push({
+      rank,
+      zone: bestZone,
+      incrementalGain: bestGain,
+      ...projected,
+    });
+  }
+
+  return recommendations;
+}
+
 export type NetworkSortKey = 'population' | 'demand_index';
 
 /** Sort served zones for table display. */
