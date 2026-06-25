@@ -37,7 +37,6 @@ h1,
 h2,
 h3,
 h4,
-.app-hero__title,
 .how-it-works__title,
 .coverage-map__header h3,
 .state-zip-table__heading,
@@ -149,6 +148,7 @@ h4,
 
 .app-hero__title {
   margin: 0;
+  font-family: 'Sora', 'Inter', system-ui, sans-serif;
   font-size: 1.875rem;
   font-weight: 700;
   letter-spacing: -0.02em;
