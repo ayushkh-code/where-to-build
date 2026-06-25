@@ -146,7 +146,11 @@ h4,
 
 .creator-credit__icon {
   flex-shrink: 0;
-  opacity: 0.9;
+  color: #0a66c2;
+}
+
+.creator-credit:hover .creator-credit__icon {
+  color: #378fe9;
 }
 
 .creator-credit:hover {
