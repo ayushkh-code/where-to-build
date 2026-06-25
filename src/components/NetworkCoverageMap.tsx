@@ -184,27 +184,25 @@ export function NetworkCoverageMap({
             <g
               key={`rec-${zone.zip3}`}
               className="coverage-map__recommended"
+              transform={`translate(${x}, ${y})`}
               aria-label={`Recommended node ${rank}: ${zone.zip3}`}
             >
               <circle
-                cx={x}
-                cy={y}
-                r={9}
+                className="coverage-map__recommended-halo"
+                r={10}
                 fill="none"
-                stroke="#F59E0B"
-                strokeWidth={2.5}
+                stroke="#16a34a"
+                strokeWidth={2}
               />
               <circle
-                cx={x}
-                cy={y}
+                className="coverage-map__recommended-dot"
                 r={5}
-                fill="#0F2438"
-                stroke="#F59E0B"
+                fill="#16a34a"
+                stroke="#fff"
                 strokeWidth={1.5}
               />
               <text
-                x={x}
-                y={y + 18}
+                y={18}
                 textAnchor="middle"
                 className="coverage-map__recommended-label mono"
               >
@@ -248,53 +246,47 @@ export function NetworkCoverageMap({
             <span className="mono">Pop. {formatNumber(hovered.population)}</span>
           </div>
         )}
-
-        {warehouses.length > 0 && (
-          <ul className="coverage-map__legend" aria-label="Map legend">
-            <li>
-              <span
-                className="coverage-map__swatch"
-                style={{ background: DAY_COLORS[1] }}
-              />
-              <TransitDayText days={1} hint />
-            </li>
-            <li>
-              <span
-                className="coverage-map__swatch"
-                style={{ background: DAY_COLORS[2] }}
-              />
-              <TransitDayText days={2} hint />
-            </li>
-            <li>
-              <span
-                className="coverage-map__swatch"
-                style={{ background: DAY_COLORS[3] }}
-              />
-              <TransitDayText days={3} hint />
-            </li>
-            <li>
-              <span
-                className="coverage-map__swatch coverage-map__swatch--muted"
-              />
-              Not served
-            </li>
-            <li>
-              <span
-                className="coverage-map__swatch coverage-map__swatch--origin"
-              />
-              Warehouse
-            </li>
-            {recommendedMarkers.length > 0 && (
-              <li>
-                <span
-                  className="coverage-map__swatch coverage-map__swatch--recommended"
-                />
-                Recommended node
-              </li>
-            )}
-          </ul>
-        )}
       </div>
+
+      {warehouses.length > 0 && (
+        <ul className="coverage-map__legend" aria-label="Map legend">
+          <li>
+            <span
+              className="coverage-map__swatch"
+              style={{ background: DAY_COLORS[1] }}
+            />
+            <TransitDayText days={1} hint />
+          </li>
+          <li>
+            <span
+              className="coverage-map__swatch"
+              style={{ background: DAY_COLORS[2] }}
+            />
+            <TransitDayText days={2} hint />
+          </li>
+          <li>
+            <span
+              className="coverage-map__swatch"
+              style={{ background: DAY_COLORS[3] }}
+            />
+            <TransitDayText days={3} hint />
+          </li>
+          <li>
+            <span className="coverage-map__swatch coverage-map__swatch--muted" />
+            Not served
+          </li>
+          <li>
+            <span className="coverage-map__swatch coverage-map__swatch--origin" />
+            Existing warehouse
+          </li>
+          {recommendedMarkers.length > 0 && (
+            <li>
+              <span className="coverage-map__swatch coverage-map__swatch--recommended" />
+              Recommended node
+            </li>
+          )}
+        </ul>
+      )}
     </div>
   );
 }
