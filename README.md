@@ -17,7 +17,7 @@ React 19, TypeScript, Vite, d3-geo, us-atlas, PapaParse. Static deploy on Vercel
 
 ### Visitor count
 
-The hero shows a live visitor tally fetched asynchronously from `/api/visitors`. By default it uses [countapi.xyz](https://countapi.xyz) (no env setup). For a first-party counter, add **Upstash Redis** from the [Vercel Marketplace](https://vercel.com/marketplace?category=storage&search=redis) — the API auto-switches when `UPSTASH_REDIS_REST_*` env vars are present.
+The hero shows a live visitor tally fetched asynchronously from `/api/visitors`. By default it uses [counterapi.dev](https://counterapi.dev) (no env setup). For a first-party counter, add **Upstash Redis** from the [Vercel Marketplace](https://vercel.com/marketplace?category=storage&search=redis) — the API auto-switches when `UPSTASH_REDIS_REST_*` env vars are present.
 
 ## Data
 

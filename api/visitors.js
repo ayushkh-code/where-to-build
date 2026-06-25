@@ -1,5 +1,20 @@
-const COUNTAPI_NAMESPACE = 'ayushkhaitan';
-const COUNTAPI_KEY = 'footprint-visits';
+const COUNTERAPI_NAMESPACE = 'ayushkhaitan';
+const COUNTERAPI_NAME = 'footprint-visits';
+
+async function incrementViaCounterApi() {
+  const res = await fetch(
+    `https://api.counterapi.dev/v1/${COUNTERAPI_NAMESPACE}/${COUNTERAPI_NAME}/up`,
+    { signal: AbortSignal.timeout(8000) },
+  );
+  if (!res.ok) {
+    throw new Error(`counterapi responded ${res.status}`);
+  }
+  const data = await res.json();
+  if (typeof data.count !== 'number') {
+    throw new Error('counterapi returned invalid payload');
+  }
+  return data.count;
+}
 
 async function incrementCount() {
   const hasUpstash = Boolean(
@@ -12,18 +27,7 @@ async function incrementCount() {
     return redis.incr('footprint:visitor-count');
   }
 
-  const res = await fetch(
-    `https://api.countapi.xyz/hit/${COUNTAPI_NAMESPACE}/${COUNTAPI_KEY}`,
-    { signal: AbortSignal.timeout(8000) },
-  );
-  if (!res.ok) {
-    throw new Error(`countapi responded ${res.status}`);
-  }
-  const data = await res.json();
-  if (typeof data.value !== 'number') {
-    throw new Error('countapi returned invalid payload');
-  }
-  return data.value;
+  return incrementViaCounterApi();
 }
 
 export default async function handler(request) {
