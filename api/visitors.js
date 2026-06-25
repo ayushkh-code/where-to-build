@@ -1,7 +1,7 @@
 const COUNTAPI_NAMESPACE = 'ayushkhaitan';
 const COUNTAPI_KEY = 'footprint-visits';
 
-async function incrementCount(): Promise<number> {
+async function incrementCount() {
   const hasUpstash = Boolean(
     process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN,
   );
@@ -19,14 +19,14 @@ async function incrementCount(): Promise<number> {
   if (!res.ok) {
     throw new Error(`countapi responded ${res.status}`);
   }
-  const data = (await res.json()) as { value?: number };
+  const data = await res.json();
   if (typeof data.value !== 'number') {
     throw new Error('countapi returned invalid payload');
   }
   return data.value;
 }
 
-export default async function handler(request: Request): Promise<Response> {
+export default async function handler(request) {
   if (request.method !== 'GET' && request.method !== 'POST') {
     return new Response('Method Not Allowed', { status: 405 });
   }
