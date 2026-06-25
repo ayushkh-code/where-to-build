@@ -13,7 +13,11 @@ Find where to place your next distribution center. Map what your current fulfill
 
 ## Stack
 
-React 19, TypeScript, Vite, d3-geo, us-atlas, PapaParse. Static deploy on Vercel.
+React 19, TypeScript, Vite, d3-geo, us-atlas, PapaParse. Static deploy on Vercel with a serverless `/api/visitors` counter.
+
+### Visitor count
+
+The hero shows a live visitor tally fetched asynchronously from `/api/visitors`. By default it uses [countapi.xyz](https://countapi.xyz) (no env setup). For a first-party counter, add **Upstash Redis** from the [Vercel Marketplace](https://vercel.com/marketplace?category=storage&search=redis) — the API auto-switches when `UPSTASH_REDIS_REST_*` env vars are present.
 
 ## Data
 

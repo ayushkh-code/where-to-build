@@ -1,4 +1,5 @@
 import { CreatorCredit } from './CreatorCredit';
+import { VisitorCount } from './VisitorCount';
 
 interface AppHeroProps {
   totalPopulation: number;
@@ -22,7 +23,10 @@ export function AppHero({
     <div className="app-hero">
       <div className="app-hero__inner">
         <div className="app-hero__top">
-          <h1 className="app-hero__title">Footprint</h1>
+          <div className="app-hero__brand">
+            <h1 className="app-hero__title">Footprint</h1>
+            <VisitorCount />
+          </div>
           <CreatorCredit />
         </div>
         <p className="app-hero__subhead">
