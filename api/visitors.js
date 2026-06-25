@@ -30,33 +30,18 @@ async function incrementCount() {
   return incrementViaCounterApi();
 }
 
-export default async function handler(request) {
-  if (request.method !== 'GET' && request.method !== 'POST') {
-    return new Response('Method Not Allowed', { status: 405 });
+export default async function handler(req, res) {
+  if (req.method !== 'GET' && req.method !== 'POST') {
+    res.setHeader('Allow', 'GET, POST');
+    return res.status(405).end('Method Not Allowed');
   }
+
+  res.setHeader('Cache-Control', 'no-store');
 
   try {
     const count = await incrementCount();
-
-    return Response.json(
-      { count },
-      {
-        headers: {
-          'Cache-Control': 'no-store',
-          'Content-Type': 'application/json',
-        },
-      },
-    );
+    return res.status(200).json({ count });
   } catch {
-    return Response.json(
-      { count: null, error: 'unavailable' },
-      {
-        status: 503,
-        headers: {
-          'Cache-Control': 'no-store',
-          'Content-Type': 'application/json',
-        },
-      },
-    );
+    return res.status(503).json({ count: null, error: 'unavailable' });
   }
 }
