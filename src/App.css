@@ -929,6 +929,14 @@ h4,
   color: var(--text-muted);
 }
 
+.coverage-map__header--compact {
+  padding: 0.4rem 0.75rem;
+}
+
+.coverage-map__header--compact h3 {
+  margin: 0;
+}
+
 .coverage-map__frame {
   position: relative;
   padding: 0.75rem;

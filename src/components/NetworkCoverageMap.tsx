@@ -23,7 +23,7 @@ interface NetworkCoverageMapProps {
   recommendedNodes?: Zip3Zone[];
   servedZones: ServedZone[];
   dayThreshold: 1 | 2 | 3;
-  /** Tighter layout for Reach & Expand (no header band, minimal frame padding). */
+  /** Tighter layout for Reach & Expand (title only, minimal frame padding). */
   compact?: boolean;
 }
 
@@ -92,7 +92,11 @@ export function NetworkCoverageMap({
 
   return (
     <div className={compact ? 'coverage-map coverage-map--reach' : 'coverage-map'}>
-      {!compact && (
+      {compact ? (
+        <div className="coverage-map__header coverage-map__header--compact">
+          <h3>Coverage Map</h3>
+        </div>
+      ) : (
         <div className="coverage-map__header">
           <h3>Network coverage map</h3>
           <p>
